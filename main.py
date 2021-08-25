@@ -132,7 +132,7 @@ def get_data(id):
 
 if __name__ == '__main__':
     mydir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(mydir, 'config_api.yaml'), "r") as config_file:
+    with open(os.path.join(mydir, 'config.yaml'), "r") as config_file:
         CONFIG = yaml.safe_load(config_file)
 
     logging.basicConfig(filename=os.path.join(mydir, 'sample.log'),
