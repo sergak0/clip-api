@@ -102,7 +102,7 @@ def mythread(data, id):
 def predict_video():
     data = flask.request.json
     id = random.randint(0, 1e18)
-    thr = threading.Thread(target=mythread, args=(data,))
+    thr = threading.Thread(target=mythread, args=(data, id, ))
     thr.start()
 
     return {'id': id}
