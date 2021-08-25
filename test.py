@@ -5,7 +5,7 @@ import time
 if __name__ == '__main__' :
     video_url = 'https://files.catbox.moe/tks0tu.mp4'
     labels = ['training', 'human', 'sport']
-    api_url = 'http://194.163.165.205:7777/api/v1.1'
+    api_url = 'http://194.163.165.205:2222'
     print(api_url)
     req = requests.post(api_url + '/task', json={'video_url': video_url, 'labels': labels})
     if req.status_code != 200:
