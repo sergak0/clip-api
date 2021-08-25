@@ -81,10 +81,10 @@ def mythread(data, id):
 
     logging.info('downloading' + data['video_url'])
     video_format = data['video_url'][-3:]
-    video_name = 'video.' + video_format
-    # if os.path.exists(video_name):
-    #     os.remove(video_name)
-    # os.system('wget -O {} {}'.format(video_name, data['video_url']))
+    video_name = 'video{}.'.format(random.randint(0, 15)) + video_format
+    if os.path.exists(video_name):
+        os.remove(video_name)
+    os.system('wget -O {} {}'.format(video_name, data['video_url']))
 
     logging.info('detecting ' + str(video_name))
     top_labels = get_mediapipe_landmark(video_path=video_name, labels=data['labels'])
