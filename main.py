@@ -15,25 +15,25 @@ import torch
 import clip
 from PIL import Image
 
-error = None
-
 id_results = {}
 id_busy = {}
 
 
 def get_proba(image_batch, labels):
-    pil_image_batch = []
-    for image_cv2 in image_batch:
-        image = Image.fromarray(image_cv2).unsqueeze(0).to(device)
-        pil_image_batch.append(image)
+    with torch.no_grad():
+        pil_image_batch = []
+        for image_cv2 in image_batch:
+            image = preprocess(Image.fromarray(image_cv2)).unsqueeze(0).to(device)
+            pil_image_batch.append(image)
 
-    text = clip.tokenize(labels).to(device)
+        text = clip.tokenize(labels).to(device)
 
-    # image_features = model.encode_image(pil_image_batch)
-    # text_features = model.encode_text(text)
-
-    logits_per_image, logits_per_text = model(pil_image_batch, text)
-    probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+        # image_features = model.encode_image(pil_image_batch)
+        # text_features = model.encode_text(text)
+        pil_image_batch = torch.cat(pil_image_batch)
+        logging.info(pil_image_batch.shape)
+        logits_per_image, logits_per_text = model(pil_image_batch, text)
+        probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
     return probs
 
@@ -48,7 +48,7 @@ def get_mediapipe_landmark(video_path, labels):
     batch = []
     while cap.isOpened():
         success, image = cap.read()
-        if len(batch) % CONFIG['batch_size'] == 0 or not success and len(batch) != 0:
+        if (len(batch) % CONFIG['batch_size'] == 0 or not success) and len(batch) != 0:
             batch_proba = get_proba(batch, labels)
             for proba in batch_proba:
                 sum_proba += proba
@@ -68,7 +68,7 @@ def get_mediapipe_landmark(video_path, labels):
     logging.info('done ' + video_path + ' in {} seconds'.format(round(end_time - start_time, 2)))
 
     tmp = [(sum_proba[i], labels[i]) for i in range(len(labels))]
-    tmp.sort()
+    tmp.sort(key=lambda x: -x[0])
     result = [{'text': el[1], 'sum_proba': el[0]} for el in tmp[:5]]
     return result
 
@@ -77,23 +77,18 @@ app = Flask(__name__)
 
 
 def mythread(data, id):
-    global error
     id_busy[id] = 1
 
     logging.info('downloading' + data['video_url'])
     video_format = data['video_url'][-3:]
     video_name = 'video.' + video_format
-    if os.path.exists(video_name):
-        os.remove(video_name)
+    # if os.path.exists(video_name):
+    #     os.remove(video_name)
+    # os.system('wget -O {} {}'.format(video_name, data['video_url']))
 
-    os.system('wget -O {} {}'.format(video_name, data['video_url']))
     logging.info('detecting ' + str(video_name))
-    try:
-        top_labels, bad = get_mediapipe_landmark(video_path=video_name, labels=data['labels'])
-        id_results[id] = top_labels
-    except:
-        error = traceback.format_exc()
-        logging.info(error)
+    top_labels = get_mediapipe_landmark(video_path=video_name, labels=data['labels'])
+    id_results[id] = top_labels
 
     id_busy[id] = 0
 
@@ -108,8 +103,9 @@ def predict_video():
     return {'id': id}
 
 
-@app.route('/task/<id>/status')
+@app.route('/task/<id>/status', methods=["GET"])
 def is_busy(id):
+    id = int(id)
     if not id in id_busy.keys():
         return Response("Task with this id doesn't exist", status=400)
 
@@ -119,8 +115,9 @@ def is_busy(id):
         return {'status': 'in_queue'}
 
 
-@app.route('/task/<id>/data')
+@app.route('/task/<id>/data', methods=["GET"])
 def get_data(id):
+    id = int(id)
     if not id in id_busy.keys():
         return Response("Task with this id doesn't exist", status=400)
 
