@@ -1,3 +1,4 @@
 port: 2222
 batch_size: 64
+labels: ['cat', 'dog']
 fps: 5

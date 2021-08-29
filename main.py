@@ -38,7 +38,7 @@ def get_proba(image_batch, labels):
     return probs
 
 
-def get_mediapipe_landmark(video_path, labels):
+def get_clip_proba(video_path, labels):
     start_time = time.time()
     cap = cv2.VideoCapture(video_path)
     freq = cap.get(cv2.CAP_PROP_FPS) // CONFIG['fps']
@@ -87,7 +87,8 @@ def mythread(data, id):
     os.system('wget -O {} {}'.format(video_name, data['video_url']))
 
     logging.info('detecting ' + str(video_name))
-    top_labels = get_mediapipe_landmark(video_path=video_name, labels=data['labels'])
+    labels = data['labels'] if 'labels' in data.keys() else CONFIG['labels']
+    top_labels = get_clip_proba(video_path=video_name, labels=labels)
     id_results[id] = top_labels
 
     id_busy[id] = 0
