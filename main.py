@@ -14,6 +14,7 @@ import logging
 import torch
 import clip
 from PIL import Image
+import urllib.request
 
 id_results = {}
 id_busy = {}
@@ -82,9 +83,9 @@ def mythread(data, id):
     logging.info('downloading' + data['video_url'])
     video_format = data['video_url'][-3:]
     video_name = 'video{}.'.format(random.randint(0, 15)) + video_format
-    if os.path.exists(video_name):
-        os.remove(video_name)
-    os.system('wget -O {} {}'.format(video_name, data['video_url']))
+
+    urllib.request.urlretrieve(data['video_url'], video_name)
+    # os.system('wget -O {} {}'.format(video_name, data['video_url']))
 
     logging.info('detecting ' + str(video_name))
     labels = data['labels'] if 'labels' in data.keys() else CONFIG['labels']
